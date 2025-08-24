@@ -70,12 +70,13 @@ __global__ void wmma_example(half *a, half *b, float *c,
 
 void matrixMultiply(half* A, half* B, float* C, int M, int N, int K, float alpha, float beta) {
     // Set the grid and block size for the kernel launch
-    // 每个Block处理2x2 Tiles（32x32线程）
-    dim3 threadsPerBlock(32, 32);
-    dim3 blocksPerGrid((M + 31) / (WMMA_M * 2), (N + 31) / (WMMA_N * 2));
+    dim3 block(32, 32);
+    dim3 grid((N + block.x - 1) / block.x,
+              (M + block.y - 1) / block.y);
+
 
     // Launch the kernel
-    wmma_example<<<blocksPerGrid, threadsPerBlock>>>(A, B, C, M, N, K, alpha, beta);
+    wmma_example<<<grid, block>>>(A, B, C, M, N, K, alpha, beta);
 
     // Synchronize the device
     cudaDeviceSynchronize();
@@ -164,7 +165,7 @@ int main() {
     printf("C[M/2,N/2] = %.3f\n", h_C[(M/2)*N + (N/2)]);
     printf("C[M-1,N-1] = %.3f\n", h_C[(M-1)*N + (N-1)]);
 
-    dim3 block(16, 16);
+    dim3 block(32, 32);
     dim3 grid((N + block.x - 1) / block.x,
               (M + block.y - 1) / block.y);
     matmul_naive<<<grid, block>>>(a_gpu, b_gpu, c_gpu, M, K, N);
