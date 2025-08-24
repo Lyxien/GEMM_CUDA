@@ -1,4 +1,4 @@
-# v4 实现
+# v3 实现
 
 ```c++
 __global__ void matmul_naive_float4(const float* __restrict__ A,
